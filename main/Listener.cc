@@ -1,8 +1,10 @@
-
-#include <iostream>
+//  Copyright 2024 Angel Alberto Rueda Mejia
 
 #include "Session.h"
 #include "Listener.h"
+
+#include <iostream>
+#include <utility>
 
 Listener::Listener(
     net::io_context& ioc,
@@ -20,7 +22,7 @@ Listener::Listener(
         std::cerr << "Set option error: " << ec.message() << std::endl;
         return;
     }
-    
+
     acceptor_.bind(endpoint, ec);
     if (ec) {
         std::cerr << "Bind error: " << ec.message() << std::endl;
@@ -35,27 +37,20 @@ Listener::Listener(
 
     do_accept();
 }
-    
-std::shared_ptr<Listener> Listener::create(
-        net::io_context& ioc,
-        net::ip::tcp::endpoint endpoint
-) {
-    return std::make_shared<Listener>(ioc, endpoint);
-}
 
 std::shared_ptr<Listener> Listener::getptr() {
     return shared_from_this();
 }
 
 void Listener::do_accept() {
-    acceptor_.async_accept(
-        net::make_strand(ioc_),
-        [this](beast::error_code ec, net::ip::tcp::socket socket) {
-            if(!ec) {
-                std::make_shared<Session>(std::move(socket))->run();
-            }
-            do_accept();
-        }
-    );
+    acceptor_.async_accept(net::make_strand(ioc_),
+                           [this](beast::error_code ec,
+                                  net::ip::tcp::socket socket) {
+                                if (!ec) {
+                                    std::make_shared<Session>(std::move(socket))
+                                    ->run();
+                                }
+                                do_accept();
+                           });
 }
 
